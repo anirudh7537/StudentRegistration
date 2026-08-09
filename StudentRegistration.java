@@ -1,5 +1,8 @@
 import javax.swing.*;
 import java.awt.event.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class StudentRegistration extends JFrame implements ActionListener {
 
@@ -171,16 +174,22 @@ public class StudentRegistration extends JFrame implements ActionListener {
                 return;
             }
 
-            JOptionPane.showMessageDialog(this,
-                    "Registration Successful!\n\n"
-                            + "Roll No : " + roll
-                            + "\nName : " + name
-                            + "\nAge : " + age
-                            + "\nGender : " + gender
-                            + "\nEmail : " + email
-                            + "\nMobile : " + mobile
-                            + "\nCourse : " + course
-                            + "\nAddress : " + address);
+            // PHASE 4: Save to MySQL instead of just showing a dialog
+            boolean saved = saveToDatabase(roll, name, age, gender, email, mobile, course, address);
+
+            if (saved) {
+                JOptionPane.showMessageDialog(this,
+                        "Registration Successful! Saved to database.\n\n"
+                                + "Roll No : " + roll
+                                + "\nName : " + name
+                                + "\nAge : " + age
+                                + "\nGender : " + gender
+                                + "\nEmail : " + email
+                                + "\nMobile : " + mobile
+                                + "\nCourse : " + course
+                                + "\nAddress : " + address);
+                
+            }
         }
 
         if (e.getSource() == resetButton) {
@@ -195,6 +204,39 @@ public class StudentRegistration extends JFrame implements ActionListener {
             genderGroup.clearSelection();
             courseBox.setSelectedIndex(0);
             terms.setSelected(false);
+        }
+    }
+
+    // PHASE 4: Insert logic, kept in its own method so actionPerformed stays readable
+    private boolean saveToDatabase(String roll, String name, String ageStr, String gender,
+                                    String email, String mobile, String course, String address) {
+
+        String sql = "INSERT INTO students (roll_no, name, age, gender, email, mobile, course, address) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, roll);
+            stmt.setString(2, name);
+            stmt.setInt(3, Integer.parseInt(ageStr));
+            stmt.setString(4, gender);
+            stmt.setString(5, email);
+            stmt.setString(6, mobile);
+            stmt.setString(7, course);
+            stmt.setString(8, address);
+
+            stmt.executeUpdate();
+            return true;
+
+        } catch (NumberFormatException nfe) {
+            JOptionPane.showMessageDialog(this, "Age must be a valid number.");
+            return false;
+
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage());
+            ex.printStackTrace();
+            return false;
         }
     }
 
