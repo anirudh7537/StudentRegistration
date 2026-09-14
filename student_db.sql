@@ -13,3 +13,4 @@ CREATE TABLE IF NOT EXISTS students (
     address TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+SELECT * FROM students;
